@@ -23,8 +23,8 @@
       <el-form-item>
         <el-button type="primary" @click="onSubmit">查询</el-button>
         <a :href="'/?day='+getDateDay(formInline.day,0)+'&hexin='+document.cookie.split(';')[0].split('=')[1]"
-        target="_blank">
-        <el-button>跳转</el-button>
+           target="_blank">
+          <el-button>跳转</el-button>
         </a>
 
       </el-form-item>
@@ -114,7 +114,8 @@
           })
         },
         getData: function (day, day1) {
-          const obj_t = ['2板以上', '涨停', '首板', '炸板', '涨幅>0%非涨停', '涨幅<0%'];
+          //const obj_t = ['2板以上', '涨停', '首板', '炸板', '涨幅>0%非涨停', '涨幅<0%'];
+          const obj_t = ['2板以上封单', '涨停封单', '首板封单', '炸板','涨幅>0%非涨停', '跌幅>0%'];
           const da_ta = new Array();
           obj_t.forEach(function (val) {
             da_ta.push({
