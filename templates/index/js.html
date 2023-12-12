@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>爱好</title>
-  <script src="https://s.thsi.cn/js/chameleon/chameleon.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.15/dist/vue.min.js"></script>
-  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="/static/js/chameleon.min.js"></script>
+  <script src="/static/js/vue.min.js"></script>
+  <script src="/static/js/axios.min.js"></script>
   <!-- 引入样式 -->
-  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <link rel="stylesheet" href="/static/css/index.css">
   <!-- 引入组件库 -->
-  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="/static/js/index.js"></script>
 
   <div id="app">
     <el-form ref="form" :model="formInline" label-width="80px">
@@ -115,26 +115,38 @@
         },
         getData: function (day, day1) {
           //const obj_t = ['2板以上', '涨停', '首板', '炸板', '涨幅>0%非涨停', '涨幅<0%'];
-          const obj_t = ['2板以上封单', '首板封单', '涨幅>0%非涨停', '跌幅>0%'];
+          const obj_t = ['首板封单', '2板以上封单', '跌停', '涨幅>0%', '跌幅>0%'];
           const da_ta = new Array();
           obj_t.forEach(function (val) {
+
+            let str = '';
+            if (val === '2板以上封单') {
+              str = '非北交所;非ST;'
+            }
+            if (val === '首板封单') {
+              str = '非北交所;非ST;'
+            }
+            if (val === '跌停') {
+              str = '非ST;'
+            }
+
             da_ta.push({
               'where_row_count': 0,
               'where_1_row_count': 0,
               'row_count_avg': 0,
               'type': val,
-              'where_name': day + "日竞价涨幅;" + day1 + "日" + val + ";非ST非8开头;",
+              'where_name': day + "日竞价涨幅;" + day1 + "日" + val + str,
               'where': {
                 "source": "Ths_iwencai_Xuangu",
                 "version": "2.0",
-                "question": day + "日竞价涨幅;" + day1 + "日" + val + ";非ST非8开头;",
+                "question": day + "日竞价涨幅;" + day1 + "日" + val + str,
                 'page': 1,
                 'perpage': 120,
               },
               'where_1': {
                 "source": "Ths_iwencai_Xuangu",
                 "version": "2.0",
-                "question": day + "日竞价涨幅>0;" + day1 + "日" + val + ";非ST非8开头;",
+                "question": day + "日竞价涨幅>0;" + day1 + "日" + val + str,
                 'page': 1,
                 'perpage': 120,
               }
