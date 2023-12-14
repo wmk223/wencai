@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>爱好</title>
+  <script src="/static/js/chameleon.min.js"></script>
+  <script src="/static/js/vue.min.js"></script>
+  <script src="/static/js/axios.min.js"></script>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="/static/css/index.css">
+  <!-- 引入组件库 -->
+  <script src="/static/js/index.js"></script>
+
+  <div id="app">
+    <el-form ref="form" :model="formInline" label-width="80px">
+      <el-form-item label="时间">
+        <el-date-picker
+            v-model="formInline.day"
+            type="date"
+            placeholder="选择日期">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="onSubmit">查询</el-button>
+        <a :href="'/?day='+getDateDay(formInline.day,0)+'&hexin='+document.cookie.split(';')[0].split('=')[1]"
+           target="_blank">
+          <el-button>跳转</el-button>
+        </a>
+
+      </el-form-item>
+    </el-form>
+
+    <template>
+      <el-table
+          :data="items"
+          stripe
+          style="width: 50%">
+        <el-table-column
+            prop="type"
+            label="类型"
+            width="100">
+        </el-table-column>
+        <el-table-column
+            prop="where_name"
+            label="条件"
+            width="180">
+        </el-table-column>
+        <el-table-column
+            prop="where_row_count"
+            label="昨日总数">
+        </el-table-column>
+        <el-table-column
+            prop="where_1_row_count"
+            label="竞价涨幅>0">
+        </el-table-column>
+        <el-table-column
+            prop="row_count_avg"
+            label="溢价率">
+        </el-table-column>
+      </el-table>
+    </template>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        'formInline': {
+          'day': ''
+        },
+        'items': []
+      },
+      created: function () {
+        this.formInline.day = this.getDateDay()
+      },
+      watch: {
+        items: {
+          handler () {
+            this.items.forEach(function (val) {
+              if (val.where_row_count > 0 && val.where_1_row_count > 0) {
+                val.row_count_avg = (val.where_1_row_count / val.where_row_count).toFixed(2)
+              }
+            })
+          },
+          deep: true
+        }
+      },
+      methods: {
+        onSubmit () {
+          const day = this.getDateDay(this.formInline.day, 0)
+          const day1 = this.getDateDay(this.formInline.day, 1)
+          this.items = this.getData(day, day1);
+          this.items.forEach(function (val) {
+            axios({
+              method: 'post',
+              url: 'https://www.iwencai.com/customized/chart/get-robot-data',
+              headers: { 'Hexin-V': document.cookie.split(";")[0].split("=")[1] },
+              data: val.where
+            }).then(function (response) {
+              val.where_row_count = response.data.data.answer[0].txt[0].content.components[0].data.meta.extra.row_count || 0
+            }).catch(function (error) {
+              val.where_row_count = 0
+            });
+            axios({
+              method: 'post',
+              url: 'https://www.iwencai.com/customized/chart/get-robot-data',
+              headers: { 'Hexin-V': document.cookie.split(";")[0].split("=")[1] },
+              data: val.where_1
+            }).then(function (response) {
+              val.where_1_row_count = response.data.data.answer[0].txt[0].content.components[0].data.meta.extra.row_count || 0
+            }).catch(function (error) {
+              val.where_1_row_count = 0
+            })
+          })
+        },
+        getData: function (day, day1) {
+          //const obj_t = ['2板以上', '涨停', '首板', '炸板', '涨幅>0%非涨停', '涨幅<0%'];
+          const obj_t = ['跌停', '涨幅>0%', '跌幅>0%'];
+          const da_ta = new Array();
+          obj_t.forEach(function (val) {
+
+            let str = '';
+            if (val === '2板以上封单') {
+              str = '非北交所;非ST;'
+            }
+            if (val === '首板封单') {
+              str = '非北交所;非ST;'
+            }
+            if (val === '跌停') {
+              str = '非ST;'
+            }
+
+            da_ta.push({
+              'where_row_count': 0,
+              'where_1_row_count': 0,
+              'row_count_avg': 0,
+              'type': val,
+              'where_name': day + "日竞价涨幅;" + day1 + "日" + val + str,
+              'where': {
+                "source": "Ths_iwencai_Xuangu",
+                "version": "2.0",
+                "question": day + "日竞价涨幅;" + day1 + "日" + val + str,
+                'page': 1,
+                'perpage': 120,
+              },
+              'where_1': {
+                "source": "Ths_iwencai_Xuangu",
+                "version": "2.0",
+                "question": day + "日竞价涨幅>0;" + day1 + "日" + val + str,
+                'page': 1,
+                'perpage': 120,
+              }
+            })
+          })
+          return da_ta;
+        },
+        getDateDay (day, index) {
+          var today = new Date();
+          if (day) {
+            var today = new Date(day);
+            var targetday_milliseconds = today.getTime() - 1000 * 60 * 60 * 24 * index;
+            today.setTime(targetday_milliseconds); //注意，这行是关键代码
+          }
+          var tYear = today.getFullYear();
+          var tMonth = today.getMonth();
+          var tDate = today.getDate();
+          tMonth = this.doHandleMonth(tMonth + 1);
+          tDate = this.doHandleMonth(tDate);
+          return tYear + "-" + tMonth + "-" + tDate;
+        },
+        doHandleMonth (month) {
+          var m = month;
+          if (month.toString().length == 1) {
+            m = "0" + month;
+          }
+          return m;
+        }
+      }
+    });
+
+  </script>
+</head>
+<body>
+
+</body>
+</html>
